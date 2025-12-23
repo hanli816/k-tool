@@ -158,6 +158,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   // 非管理员用户始终视为锁定状态，且不提供解锁按钮
   const isLogoLocked = isAdmin ? (state.isLogoLocked ?? true) : true;
 
+  // 渲染 Logo 的逻辑：管理员设置的系统 Logo 优先级最高
+  const displayLogo = isAdmin ? state.customLogo : (state.systemLogo || state.customLogo);
+
   const t = {
     en: { tasks: 'Tasks', knowledge: 'Knowledge', nav: 'Navigation', today: 'Today', login: 'Login / Sign Up', docs: 'Docs', emptyDocs: 'Empty', todayBadge: 'TODAY', lock: 'Lock Logo', unlock: 'Unlock Logo' },
     zh: { tasks: '任务', knowledge: '知识库', nav: '导航', today: '今天', login: '登录/注册', docs: '我的文档', emptyDocs: '暂无文档', todayBadge: '今日', lock: '锁定 Logo', unlock: '解锁 Logo' }
@@ -269,13 +272,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                   
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none z-10" />
                   
-                  {state.customLogo ? (
-                    <img src={state.customLogo} className="w-full h-full object-cover relative z-0" alt="Logo" />
+                  {displayLogo ? (
+                    <img src={displayLogo} className="w-full h-full object-cover relative z-0" alt="Logo" />
                   ) : (
                     <KingIcon className="w-7 h-7 drop-shadow-lg" />
                   )}
 
-                  {!state.customLogo && (
+                  {!displayLogo && (
                     <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white] opacity-60 z-20" />
                   )}
 
