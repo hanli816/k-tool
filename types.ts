@@ -66,7 +66,6 @@ export interface AppState {
   theme: Theme;
   language: Language;
   customLogo?: string;
-  systemLogo?: string; // 全局系统 Logo
   isLogoLocked?: boolean;
   cloudConfig?: CloudConfig;
   syncStatus?: SyncStatus;

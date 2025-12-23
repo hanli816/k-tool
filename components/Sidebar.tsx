@@ -155,11 +155,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = state.user?.email === ADMIN_EMAIL;
-  // 管理员可控锁，普通用户强行锁定
+  // 非管理员用户始终视为锁定状态，且不提供解锁按钮
   const isLogoLocked = isAdmin ? (state.isLogoLocked ?? true) : true;
-
-  // 渲染逻辑：管理员看自己的 customLogo（即时预览），普通用户强制看 systemLogo（云端全局同步）
-  const displayLogo = isAdmin ? state.customLogo : (state.systemLogo || state.customLogo);
 
   const t = {
     en: { tasks: 'Tasks', knowledge: 'Knowledge', nav: 'Navigation', today: 'Today', login: 'Login / Sign Up', docs: 'Docs', emptyDocs: 'Empty', todayBadge: 'TODAY', lock: 'Lock Logo', unlock: 'Unlock Logo' },
@@ -187,7 +184,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     setExpandedDocs(next);
   };
 
-  // FIX: Line 190, renamed setDraggedId to setDraggedDocId to match the state setter name defined on line 175.
   const handleDragStart = (id: string) => setDraggedDocId(id);
   const handleDragEnd = () => {
     setDraggedDocId(null);
@@ -273,13 +269,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                   
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none z-10" />
                   
-                  {displayLogo ? (
-                    <img src={displayLogo} className="w-full h-full object-cover relative z-0" alt="Logo" />
+                  {state.customLogo ? (
+                    <img src={state.customLogo} className="w-full h-full object-cover relative z-0" alt="Logo" />
                   ) : (
                     <KingIcon className="w-7 h-7 drop-shadow-lg" />
                   )}
 
-                  {!displayLogo && (
+                  {!state.customLogo && (
                     <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white] opacity-60 z-20" />
                   )}
 
