@@ -155,10 +155,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = state.user?.email === ADMIN_EMAIL;
-  // 非管理员用户始终视为锁定状态，且不提供解锁按钮
+  // 管理员可控锁，普通用户强行锁定
   const isLogoLocked = isAdmin ? (state.isLogoLocked ?? true) : true;
 
-  // 优先级逻辑：如果是管理员，显示他当前正在修改的 customLogo。如果是普通用户，只要 systemLogo 存在，就显示全局 Logo。
+  // 渲染逻辑：管理员看自己的 customLogo（即时预览），普通用户强制看 systemLogo（云端全局同步）
   const displayLogo = isAdmin ? state.customLogo : (state.systemLogo || state.customLogo);
 
   const t = {
@@ -187,6 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     setExpandedDocs(next);
   };
 
+  // FIX: Line 190, renamed setDraggedId to setDraggedDocId to match the state setter name defined on line 175.
   const handleDragStart = (id: string) => setDraggedDocId(id);
   const handleDragEnd = () => {
     setDraggedDocId(null);
