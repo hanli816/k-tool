@@ -4,162 +4,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K-Tool</title>
+    <title>K-Tool | Mono Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Roboto:wght@700;900&display=swap" rel="stylesheet">
-    <!-- 引入 GitHub Markdown 样式库 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Roboto:wght@700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css">
-    <script>
-        window.process = { env: { API_KEY: "" } };
-    </script>
     <style>
+        :root {
+            --accent-color: #2563eb;
+            --accent-glow: rgba(37, 99, 235, 0.4);
+        }
+
         @keyframes shimmer {
             100% { transform: translateX(100%); }
         }
-        @keyframes rotate-bg {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        @keyframes aurora-sweep {
-            0% { left: -150%; top: -150%; }
-            20% { left: 150%; top: 150%; }
-            100% { left: 150%; top: 150%; }
-        }
         
-        /* Logo 专属浮动动画 */
-        @keyframes logo-float {
+        @keyframes float {
             0%, 100% { transform: translateY(0) rotateX(0); }
-            50% { transform: translateY(-4px) rotateX(4deg); }
+            50% { transform: translateY(-10px) rotateX(2deg); }
         }
 
-        /* 极光流光 */
-        @keyframes logo-aurora {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        @keyframes grid-move {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
         }
 
-        /* P0 呼吸灯效果 */
-        @keyframes p0-pulse {
-            0% { box-shadow: 0 0 0px rgba(239, 68, 68, 0); border-color: rgba(239, 68, 68, 0.2); }
-            50% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.6); }
-            100% { box-shadow: 0 0 0px rgba(239, 68, 68, 0); border-color: rgba(239, 68, 68, 0.2); }
-        }
-
-        /* 列表项滑入动画 */
-        @keyframes task-slide-in {
-            from { opacity: 0; transform: translateY(20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* 进度条流光效果 */
-        @keyframes progress-flow {
-            from { background-position: 0 0; }
-            to { background-position: 40px 0; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px var(--accent-glow); }
+            50% { box-shadow: 0 0 25px var(--accent-glow); }
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #121212;
+            background-color: #0a0a0a;
             color: #E0E0E0;
             overflow: hidden;
             margin: 0;
-        }
-        
-        .logo-3d-container, .task-3d-container {
-            perspective: 1200px;
-        }
-        
-        .logo-3d-card {
-            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform-style: preserve-3d;
-            animation: logo-float 4s ease-in-out infinite;
+            position: relative;
         }
 
-        .logo-aurora-bg {
-            background: linear-gradient(-45deg, #2563eb, #7c3aed, #db2777, #2563eb);
-            background-size: 300% 300%;
-            animation: logo-aurora 8s ease infinite;
-        }
-
-        .aurora-shine::after {
+        body::before {
             content: "";
             position: absolute;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.4) 50%, transparent 55%);
-            animation: aurora-sweep 6s infinite ease-in-out;
+            inset: 0;
+            background-image: 
+                linear-gradient(var(--accent-glow) 1px, transparent 1px),
+                linear-gradient(90deg, var(--accent-glow) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+            opacity: 0.15;
+            animation: grid-move 10s linear infinite;
             pointer-events: none;
+            z-index: -1;
         }
 
-        .p0-glow {
-            animation: p0-pulse 2s infinite ease-in-out;
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .accent-glow-p0 {
+            animation: pulse-glow 3s infinite ease-in-out;
+            border-color: var(--accent-color) !important;
         }
 
         .task-entrance {
-            animation: task-slide-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: task-slide-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0;
         }
 
-        .progress-bar-flow {
-            background-image: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent);
-            background-size: 40px 40px;
-            animation: progress-flow 2s linear infinite;
+        @keyframes task-slide-in {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
+            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #121212;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #2D2D2D;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3D3D3D;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
+        .mono-blue-gradient {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
         }
 
-        /* 极简深色 Markdown 样式覆盖 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(37, 99, 235, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.5); }
+
         .markdown-body {
             background: transparent !important;
             color: #d1d5db !important;
-            font-family: inherit;
-            outline: none !important;
+            font-family: 'Inter', sans-serif;
             line-height: 1.8;
         }
         
         .dark .markdown-body h1, .dark .markdown-body h2, .dark .markdown-body h3 {
             color: #ffffff !important;
-            border-bottom-color: rgba(255,255,255,0.05) !important;
-            font-weight: 900 !important;
-            letter-spacing: -0.02em;
+            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        }
+        
+        input, textarea {
+            font-family: 'JetBrains Mono', monospace;
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "date-fns": "https://esm.sh/date-fns@4.1.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.462.0",
-    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
-    "marked": "https://esm.sh/marked@15.0.0",
-    "turndown": "https://esm.sh/turndown@7.2.0",
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "date-fns/": "https://esm.sh/date-fns@^4.1.0/"
+    "date-fns": "https://esm.sh/date-fns@^4.1.0",
+    "date-fns/": "https://esm.sh/date-fns@^4.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "marked": "https://esm.sh/marked@^17.0.1",
+    "turndown": "https://esm.sh/turndown@^7.2.2",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
 </head>
 <body class="dark">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
