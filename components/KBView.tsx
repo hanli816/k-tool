@@ -32,13 +32,19 @@ const KBView: React.FC<KBViewProps> = ({
   const lastContentRef = useRef<string>('');
   
   useMemo(() => {
-    marked.setOptions({ gfm: true, breaks: true, pedantic: false });
+    marked.setOptions({ gfm: true, breaks: true });
   }, []);
 
   const turndown = useMemo(() => {
     const service = new TurndownService({ headingStyle: 'atx', hr: '---', bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '*' });
-    service.addRule('keepImages', { filter: ['img'], replacement: (content, node) => `![Image](${(node as HTMLImageElement).src})` });
-    service.addRule('taskList', { filter: (node) => node.nodeName === 'INPUT' && (node as HTMLInputElement).type === 'checkbox', replacement: (content, node) => (node as HTMLInputElement).checked ? '[x] ' : '[ ] ' });
+    service.addRule('keepImages', { 
+      filter: ['img'], 
+      replacement: (_content: string, node: Node) => `![Image](${(node as HTMLImageElement).src})` 
+    });
+    service.addRule('taskList', { 
+      filter: (node: Node) => node.nodeName === 'INPUT' && (node as HTMLInputElement).type === 'checkbox', 
+      replacement: (_content: string, node: Node) => (node as HTMLInputElement).checked ? '[x] ' : '[ ] ' 
+    });
     return service;
   }, []);
 
@@ -128,7 +134,8 @@ const KBView: React.FC<KBViewProps> = ({
     if (!doc.content.trim()) return;
     setIsAiRefining(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
+      const ai = new GoogleGenAI({ apiKey: apiKey as string });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Please refine and improve the following markdown text, making it more professional and organized: \n\n${doc.content}`,
@@ -218,7 +225,13 @@ const KBView: React.FC<KBViewProps> = ({
 
         <div className="flex-1 overflow-y-auto custom-scrollbar pb-10">
           {isVisualMode ? (
-            <div ref={editableRef} contentEditable onInput={handleInput} onBlur={handleInput} className="markdown-body focus:outline-none min-h-[400px]" placeholder={t.placeholder} />
+            <div 
+              ref={editableRef} 
+              contentEditable 
+              onInput={handleInput} 
+              onBlur={handleInput} 
+              className="markdown-body focus:outline-none min-h-[400px]" 
+            />
           ) : (
             <textarea value={doc.content} onChange={(e) => onUpdate(doc.id, { content: e.target.value })} className={`w-full h-full min-h-[400px] bg-transparent resize-none outline-none font-mono text-sm leading-relaxed ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} placeholder="# Start writing markdown..." />
           )}
