@@ -1,0 +1,7 @@
+{
+  "name": "K-Tool 开发环境",
+  "description": "A lightweight, high-performance task management application featuring daily list auto-generation, state-based task syncing, and high-fidelity dark mode aesthetics inspired by modern productivity tools.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
