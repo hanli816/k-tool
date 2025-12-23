@@ -30,7 +30,8 @@ export const useTaskSync = () => {
           taskViewMode: parsed.taskViewMode || 'list',
           docs: parsed.docs || {},
           activeDocId: parsed.activeDocId || null,
-          isLogoLocked: parsed.isLogoLocked ?? true
+          isLogoLocked: parsed.isLogoLocked ?? true,
+          systemLogo: parsed.systemLogo || undefined // 确保从本地读取系统 Logo
         };
       }
     } catch (e) {}
@@ -56,34 +57,40 @@ export const useTaskSync = () => {
   const hasRolledOver = useRef(false);
   const isAdmin = state.user?.email === ADMIN_EMAIL;
 
-  // 1. 全局配置拉取 (所有人执行)
-  useEffect(() => {
+  // 1. 全局配置拉取函数
+  const fetchSystemConfig = useCallback(async () => {
     if (!state.cloudConfig?.enabled) return;
-    
-    const fetchSystemConfig = async () => {
-      try {
-        const response = await fetch(`${state.cloudConfig?.supabaseUrl}/rest/v1/user_data?id=eq.${SYSTEM_CONFIG_ID}`, {
-          method: 'GET',
-          headers: {
-            'apikey': state.cloudConfig?.supabaseKey || '',
-            'Authorization': `Bearer ${state.cloudConfig?.supabaseKey}`,
-          }
-        });
-        if (response.ok) {
-          const result = await response.json();
-          if (result && result.length > 0) {
-            const systemData = result[0].data;
-            if (systemData.customLogo) {
-              setState(prev => ({ ...prev, systemLogo: systemData.customLogo }));
-            }
+    try {
+      const response = await fetch(`${state.cloudConfig?.supabaseUrl}/rest/v1/user_data?id=eq.${SYSTEM_CONFIG_ID}`, {
+        method: 'GET',
+        headers: {
+          'apikey': state.cloudConfig?.supabaseKey || '',
+          'Authorization': `Bearer ${state.cloudConfig?.supabaseKey}`,
+        }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result && result.length > 0) {
+          const systemData = result[0].data;
+          if (systemData.customLogo && systemData.customLogo !== state.systemLogo) {
+            setState(prev => ({ ...prev, systemLogo: systemData.customLogo }));
           }
         }
-      } catch (err) {
-        console.error('System config fetch failed', err);
       }
-    };
+    } catch (err) {
+      console.warn('Global system logo sync skipped (offline or config issue)');
+    }
+  }, [state.cloudConfig?.supabaseUrl, state.systemLogo]);
+
+  // 挂载时拉取一次
+  useEffect(() => {
     fetchSystemConfig();
-  }, [state.cloudConfig?.supabaseUrl]);
+  }, [fetchSystemConfig]);
+
+  // 登录状态变化时再次拉取
+  useEffect(() => {
+    if (state.user) fetchSystemConfig();
+  }, [state.user?.id]);
 
   // 日期自动滚动逻辑...
   useEffect(() => {
@@ -158,6 +165,8 @@ export const useTaskSync = () => {
             }
           }
           hasInitialFetched.current = true;
+          // 用户数据同步后，顺便再刷一次全局配置
+          fetchSystemConfig();
         } catch (err) {
           setState(prev => ({ ...prev, syncStatus: 'error' }));
           return;
@@ -179,7 +188,6 @@ export const useTaskSync = () => {
             } 
           };
           
-          // 并行保存个人数据和全局配置（如果是管理员）
           const promises = [
              fetch(`${supabaseUrl}/rest/v1/user_data`, {
               method: 'POST',
@@ -204,6 +212,8 @@ export const useTaskSync = () => {
           const results = await Promise.all(promises);
           if (results.every(r => r.ok)) {
             setState(prev => ({ ...prev, syncStatus: 'synced', lastSyncedAt: new Date().toTimeString().split(' ')[0] }));
+            // 如果管理员更新了，触发一次全局拉取，让本地 systemLogo 也更新
+            if (isAdmin) fetchSystemConfig();
           }
         } catch (err) {
           setState(prev => ({ ...prev, syncStatus: 'error' }));
@@ -238,13 +248,20 @@ export const useTaskSync = () => {
     if (normalizedParentId) { if (normalizedParentId === docId) return prev; let checkId: string | null = normalizedParentId; while (checkId) { if (checkId === docId) return prev; checkId = prev.docs[checkId]?.parentId || null; } }
     return { ...prev, docs: { ...prev.docs, [docId]: { ...doc, parentId: normalizedParentId, order: newOrder, updatedAt: Date.now() } } };
   });
+  
+  const getApiKey = () => {
+    if (typeof process !== 'undefined' && process.env.API_KEY) return process.env.API_KEY;
+    return '';
+  };
+
   const generateAiSolution = async (taskId: string) => {
     const task = state.tasks[taskId]; if (!task) return;
     const keywords = task.name.split(' ').filter(k => k.length > 1);
     const relevantDocs = (Object.values(state.docs) as Document[]).filter(doc => { const matchInTitle = keywords.some(k => doc.title.toLowerCase().includes(k.toLowerCase())); const matchInContent = keywords.some(k => doc.content.toLowerCase().includes(k.toLowerCase())); return matchInTitle || matchInContent; }).slice(0, 5);
     const context = relevantDocs.map(d => `Document: ${d.title}\nContent: ${d.content}`).join('\n\n---\n\n');
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const apiKey = getApiKey();
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `Task: "${task.name}"\nDescription: "${task.description}"\n\nBased on these relevant documents from my Knowledge Base:\n${context}\n\nProvide a concise solution or actionable steps for this task.`, config: { systemInstruction: `You are a professional strategist. If relevant knowledge exists, use it. If not, provide general best practices. Language: ${state.language === 'zh' ? 'Chinese' : 'English'}. Format as markdown.`, temperature: 0.7 } });
       if (response.text) updateTask(taskId, { aiSolution: response.text });
     } catch (e) { console.error('Failed to generate AI solution:', e); }
@@ -290,7 +307,10 @@ export const useTaskSync = () => {
     toggleLogoLock: () => setState(prev => ({ ...prev, isLogoLocked: !prev.isLogoLocked })),
     setState, updateCloudConfig: (config: any) => setState(prev => ({ ...prev, cloudConfig: { ...prev.cloudConfig!, ...config } })),
     login: (user: User) => setState(prev => ({ ...prev, user })),
-    logout: () => setState(prev => ({ ...prev, user: null, tasks: {}, lists: {}, docs: {}, syncStatus: 'offline' })),
+    logout: () => {
+       hasInitialFetched.current = false;
+       setState(prev => ({ ...prev, user: null, tasks: {}, lists: {}, docs: {}, syncStatus: 'offline', customLogo: undefined }));
+    },
     setCustomLogo: (logo: string) => setState(prev => ({ ...prev, customLogo: logo }))
   };
 };

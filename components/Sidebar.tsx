@@ -158,7 +158,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // 非管理员用户始终视为锁定状态，且不提供解锁按钮
   const isLogoLocked = isAdmin ? (state.isLogoLocked ?? true) : true;
 
-  // 渲染 Logo 的逻辑：管理员设置的系统 Logo 优先级最高
+  // 优先级逻辑：如果是管理员，显示他当前正在修改的 customLogo。如果是普通用户，只要 systemLogo 存在，就显示全局 Logo。
   const displayLogo = isAdmin ? state.customLogo : (state.systemLogo || state.customLogo);
 
   const t = {
